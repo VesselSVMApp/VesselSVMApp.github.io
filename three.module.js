@@ -10988,7 +10988,6 @@ class PerspectiveCamera extends Camera {
       near,
       this.far
     );
-
     this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
   }
 
@@ -14084,7 +14083,6 @@ class OrthographicCamera extends Camera {
       this.near,
       this.far
     );
-
     this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
   }
 
