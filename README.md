@@ -124,4 +124,4 @@ public class MainActivity extends AppCompatActivity {
 - 스트림해주는 PC와 같은 Network 상에 접속해있어야 하며, App 실행 후 IP Address 입력하여 Scene 확인 가능
 
 ### 특이사항
-- 정상적으로 작동되지 않을 시, Chrome 사이트 설정 > 안전하지 않은 콘텐츠 > [kimgooq.github.io](http://VesselSVMApp.github.io/) 허용
+- 정상적으로 작동되지 않을 시, Chrome 사이트 설정 > 안전하지 않은 콘텐츠 > [VesselSVMApp.github.io](http://VesselSVMApp.github.io/) 허용
