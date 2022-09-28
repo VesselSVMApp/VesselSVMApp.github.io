@@ -143,10 +143,10 @@ function SetExtrinsicParameters(
 }
 
 function CreateImagePlane(camera) {
-  const LeftTop_near = new THREE.Vector3(-1, 1, 0.9).unproject(camera);
-  const RightTop_near = new THREE.Vector3(1, 1, 0.9).unproject(camera);
-  const LeftBottom_near = new THREE.Vector3(-1, -1, 0.9).unproject(camera);
-  const RightBottom_near = new THREE.Vector3(1, -1, 0.9).unproject(camera);
+  const LeftTop_near = new THREE.Vector3(-1, 1, -1).unproject(camera);
+  const RightTop_near = new THREE.Vector3(1, 1, -1).unproject(camera);
+  const LeftBottom_near = new THREE.Vector3(-1, -1, -1).unproject(camera);
+  const RightBottom_near = new THREE.Vector3(1, -1, -1).unproject(camera);
   const imageplane_geometry = new THREE.BufferGeometry();
   imageplane_geometry.setAttribute(
     "position",
@@ -349,7 +349,7 @@ function init() {
     video_3.play();
   }
   // sphere
-  const geometry_sphere = new THREE.SphereGeometry(120, 360, 180); //(120, 256, 128);
+  const geometry_sphere = new THREE.SphereGeometry(50, 512, 256); //(120, 256, 128);
   const sphere = new THREE.Mesh(
     geometry_sphere,
     new THREE.MeshPhongMaterial({
@@ -359,7 +359,7 @@ function init() {
       opacity: 0.3,
     })
   );
-  sphere.position.set(0, 0, -100);
+  sphere.position.set(0, 0, -46.5);
   sphere.updateMatrixWorld();
   scene.add(sphere);
 
@@ -701,28 +701,5 @@ function render() {
 
   renderer.render(scene, camera);
 }
-
+// for debugging
 window.onkeydown = (e) => console.log();
-
-// Check imageData when Click
-
-/*
-var t = document.getElementById("target");
-t.addEventListener("click", function (event) {
-  imagedata_to_image(imageData);
-});
-
-function imagedata_to_image(imagedata) {
-  console.log(imagedata);
-  console.log(video_texture);
-  console.log(mesh2.material);
-  var canvas = document.createElement("canvas");
-  var ctx = canvas.getContext("2d");
-  canvas.width = imagedata.width;
-  canvas.height = imagedata.height;
-  ctx.putImageData(imagedata, 0, 0);
-
-  var image = new Image();
-  image.src = canvas.toDataURL("./");
-  return image;
-}*/
