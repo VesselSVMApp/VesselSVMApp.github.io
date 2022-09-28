@@ -20,8 +20,6 @@ import { Sky } from "./Sky.js";
 import { GLTFLoader } from "./GLTFLoader.js";
 import { CalibratedCamera } from "./CalibratedCamera.js";
 
-import { Box_Vertices } from "./box_vertices.js";
-
 let video = document.getElementById("video");
 let context = video.getContext("2d");
 
@@ -132,22 +130,22 @@ function init() {
   camera.position.set(0, 30, 100);
 
   const camera_calibrated = new CalibratedCamera(
-    529,
-    529,
-    621,
-    367,
+    500,
+    500,
+    654.828747,
+    494.453661,
     0,
     1280, // WIDTH,
-    720, // HEIGHT,
+    960, // HEIGHT,
     0.1,
     100
   );
   camera_calibrated.position.set(0, 60, 0);
-  // camera_calibrated.rotateX(-0.65);
+  camera_calibrated.rotateX(-0.65);
   scene.add(camera_calibrated);
   console.log(camera_calibrated);
-  const helper_cal = new THREE.CameraHelper(camera_calibrated);
-  scene.add(helper_cal);
+  // const helper_cal = new THREE.CameraHelper(camera_calibrated);
+  // scene.add(helper_cal);
 
   // front camera
   camera_front = new THREE.PerspectiveCamera(
@@ -163,12 +161,12 @@ function init() {
     camera_front.filmGauge
   );
   camera_front.position.set(0, 60, -30);
-  camera_front.rotateX(-0.65);
+  camera_front.rotateX(THREE.MathUtils.radToDeg(45));
   camera_front.updateProjectionMatrix();
   helper = new THREE.CameraHelper(camera_front);
   scene.add(camera_front);
   console.log(camera_front);
-  scene.add(helper);
+  // scene.add(helper);
 
   // video texture
   const video = document.getElementById("cam0");
@@ -467,7 +465,7 @@ function init() {
   controls.update();
 
   window.addEventListener("resize", onWindowResize);
-  // scene.remove(sphere);
+  scene.remove(sphere);
 }
 
 function onWindowResize() {
