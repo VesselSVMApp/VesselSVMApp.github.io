@@ -324,9 +324,9 @@ function init() {
     1,
     20000
   );
-  camera.position.set(0, 5, -60);
+  camera.position.set(0, 9, -11);
   camera.up.set(0, 0, -1);
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(0, 2, -1);
   camera.updateMatrix();
 
   const axesHelper = new THREE.AxesHelper(50);
@@ -702,4 +702,4 @@ function render() {
   renderer.render(scene, camera);
 }
 // for debugging
-window.onkeydown = (e) => console.log();
+window.onkeydown = (e) => console.log(camera.position);
