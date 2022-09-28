@@ -31,8 +31,8 @@ class CalibratedCamera extends Camera {
     this.near = near;
     this.far = far;
 
-    this.cx = this.width / 2 - cx;
-    this.cy = this.height / 2 - cy;
+    this.cx = cx - this.width / 2;
+    this.cy = cy - this.height / 2;
 
     this.updateProjectionMatrix();
   }
@@ -71,11 +71,37 @@ class CalibratedCamera extends Camera {
     this.projectionMatrix.multiply(intrinsicCameraMatrix);
     this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
   }
+  copy(source, recursive) {
+    super.copy(source, recursive);
+    this.fx = fx;
+    this.fy = fy;
+    // this.cx = cx;
+    // this.cy = cy;
+    this.skew_c = skew_c;
+    this.width = width;
+    this.height = height;
+    this.near = near;
+    this.far = far;
+
+    this.cx = cx - this.width / 2;
+    this.cy = cy - this.height / 2;
+
+    return this;
+  }
 
   toJSON(meta) {
     const data = super.toJSON(meta);
+    data.object.fx = this.fx;
+    data.object.fy = this.fy;
+    data.object.skew_c = this.skew_c;
+    data.object.width = this.width;
+    data.object.height = this.height;
     data.object.near = this.near;
     data.object.far = this.far;
+    data.object.cx = this.cx;
+    data.object.cy = this.cy;
+    // data.object.cx=this.cx = cx - this.width / 2;
+    // data.object.cy=this.cy = cy - this.height / 2;
     return data;
   }
 }

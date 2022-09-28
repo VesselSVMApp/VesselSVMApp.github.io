@@ -1,4 +1,5 @@
-var userInput = prompt("Input your IP Address" + "");
+// var userInput = prompt("Input your IP Address" + "");
+var userInput = "";
 let ws_address_list = [];
 ws_address_list.push("ws://" + userInput + ":30001");
 ws_address_list.push("ws://" + userInput + ":30002");
@@ -34,21 +35,11 @@ let context_4 = video_4.getContext("2d");
 
 let camera, scene, renderer;
 let controls, water, sun;
-let camera_front, helper;
-// let test_vector = [];
 
 init();
 
-waitError();
+// waitError();
 
-const mesh = createCamMesh(video, 0, 30, -40);
-mesh.rotateX(-1.57);
-const mesh_2 = createCamMesh(video_2, 50, 30, 0);
-mesh_2.rotateX(-1.57).rotateZ(-1.57);
-const mesh_3 = createCamMesh(video_3, -65, 30, 0);
-mesh_3.rotateX(-1.57).rotateZ(-1.57);
-const mesh_4 = createCamMesh(video_4, 0, 30, 45);
-mesh_4.rotateX(-1.57).rotateZ(3.14);
 animate();
 
 function Set_jsmpeg(ws_address, video) {
@@ -111,105 +102,53 @@ function updateDataTexture(canvas, mesh) {
   mesh.material.map.source.data.data = imageData.data;
 }
 
-function init() {
-  renderer = new THREE.WebGLRenderer();
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  document.body.appendChild(renderer.domElement);
-
-  scene = new THREE.Scene();
-
-  camera = new THREE.PerspectiveCamera(
-    55,
-    window.innerWidth / window.innerHeight,
-    1,
-    20000
+function SetExtrinsicParameters(
+  camera,
+  Pos_x,
+  Pos_y,
+  Pos_z,
+  Euler_x,
+  Euler_y,
+  Euler_z
+) {
+  const T_front = new THREE.Matrix4().makeTranslation(0, 0, 0);
+  const S_front = new THREE.Matrix4().makeScale(1, -1, -1);
+  const R_front = new THREE.Matrix4().makeRotationFromEuler(
+    new THREE.Euler(
+      -1 * THREE.MathUtils.degToRad(Euler_x),
+      1 * THREE.MathUtils.degToRad(Euler_y),
+      1 * THREE.MathUtils.degToRad(Euler_z)
+    )
   );
 
-  camera.position.set(0, 30, 100);
+  const M_front = new THREE.Matrix4().multiplyMatrices(R_front, S_front);
 
-  const camera_calibrated = new CalibratedCamera(
-    500,
-    500,
-    654.828747,
-    494.453661,
-    0,
-    1280, // WIDTH,
-    960, // HEIGHT,
-    0.1,
-    100
-  );
-  camera_calibrated.position.set(0, 60, 0);
-  camera_calibrated.rotateX(-0.65);
-  scene.add(camera_calibrated);
-  console.log(camera_calibrated);
-  // const helper_cal = new THREE.CameraHelper(camera_calibrated);
-  // scene.add(helper_cal);
+  const M_front_inverse = M_front.clone();
+  M_front_inverse.invert();
+  const M3_front_inverse = new THREE.Matrix3().setFromMatrix4(M_front_inverse);
 
-  // front camera
-  camera_front = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
+  const camPosWS_front = new THREE.Vector3(Pos_x, Pos_y, Pos_z);
+  const camUpWS_front = new THREE.Vector3(0, 1, 0).applyMatrix3(
+    M3_front_inverse
   );
-  camera_front.updateProjectionMatrix();
-  console.log(
-    "focal length",
-    camera_front.getFocalLength(),
-    camera_front.filmGauge
+  const camViewWS_front = new THREE.Vector3(0, 0, -1).applyMatrix3(
+    M3_front_inverse
   );
-  camera_front.position.set(0, 60, -30);
-  camera_front.rotateX(THREE.MathUtils.radToDeg(45));
-  camera_front.updateProjectionMatrix();
-  helper = new THREE.CameraHelper(camera_front);
-  scene.add(camera_front);
-  console.log(camera_front);
-  // scene.add(helper);
+  const camAtWS_front = camPosWS_front.clone();
+  camAtWS_front.add(camViewWS_front);
 
-  // video texture
-  const video = document.getElementById("cam0");
-  // video.paused (비디오가 멈춰있다면) video.play()
-  // play()는 web API HTMLMediaElement 메소드
-  if (video.paused) {
-    video.play();
-  }
-  const texture = new THREE.VideoTexture(video);
-  // .map : Texture
-  // set video texture as color map
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    side: THREE.BackSide,
-  });
+  camera.position.set(camPosWS_front.x, camPosWS_front.y, camPosWS_front.z);
+  camera.up.set(camUpWS_front.x, camUpWS_front.y, camUpWS_front.z);
+  camera.lookAt(camAtWS_front.x, camAtWS_front.y, camAtWS_front.z);
+}
 
-  // sphere
-  const geometry_sphere = new THREE.SphereGeometry(120, 256, 128);
-  const sphere = new THREE.Mesh(
-    geometry_sphere,
-    new THREE.MeshPhongMaterial({
-      color: 0xffff00,
-      transparent: true,
-      side: THREE.DoubleSide,
-      opacity: 0.3,
-    })
-  );
-  sphere.position.set(0, 50, 0);
-  sphere.updateMatrixWorld();
-  scene.add(sphere);
-
-  const LeftTop_near = new THREE.Vector3(-1, 1, 0.9).unproject(camera_front);
-  const RightTop_near = new THREE.Vector3(1, 1, 0.9).unproject(camera_front);
-  const LeftBottom_near = new THREE.Vector3(-1, -1, 0.9).unproject(
-    camera_front
-  );
-  const RightBottom_near = new THREE.Vector3(1, -1, 0.9).unproject(
-    camera_front
-  );
-  const geometry = new THREE.PlaneGeometry(50, 50);
-  console.log(geometry);
-  const nearplane_front_geometry = new THREE.BufferGeometry();
-  nearplane_front_geometry.setAttribute(
+function CreateImagePlane(camera) {
+  const LeftTop_near = new THREE.Vector3(-1, 1, 0.9).unproject(camera);
+  const RightTop_near = new THREE.Vector3(1, 1, 0.9).unproject(camera);
+  const LeftBottom_near = new THREE.Vector3(-1, -1, 0.9).unproject(camera);
+  const RightBottom_near = new THREE.Vector3(1, -1, 0.9).unproject(camera);
+  const imageplane_geometry = new THREE.BufferGeometry();
+  imageplane_geometry.setAttribute(
     "position",
     new THREE.BufferAttribute(
       new Float32Array([
@@ -229,120 +168,114 @@ function init() {
       3
     )
   );
-  nearplane_front_geometry.setAttribute(
+  imageplane_geometry.setAttribute(
     "uv",
     new THREE.BufferAttribute(new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]), 2)
   );
-  nearplane_front_geometry.setAttribute(
+  imageplane_geometry.setAttribute(
     "normal",
     new THREE.BufferAttribute(
       new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]),
       2
     )
   );
-  nearplane_front_geometry.setIndex(
+  imageplane_geometry.setIndex(
     new THREE.BufferAttribute(new Uint16Array([0, 2, 1, 2, 3, 1]), 1)
   );
 
-  const nearplane_front = new THREE.Mesh(
-    // geometry,
-    nearplane_front_geometry,
+  const imageplane = new THREE.Mesh(
+    imageplane_geometry,
     new THREE.MeshBasicMaterial({
-      color: 0xff0000,
+      color: 0x0000ff,
       side: THREE.DoubleSide,
     })
   );
-  nearplane_front.position.set(0, 60, -30);
-  nearplane_front.rotateX(-0.65);
-  nearplane_front.updateMatrixWorld();
-  scene.add(nearplane_front);
-
-  const set_indices = new Set(sphere.geometry.index.array);
-  const array_indices = Array.from(new Set(sphere.geometry.index.array));
+  imageplane.position.set(
+    camera.position.x,
+    camera.position.y,
+    camera.position.z
+  );
+  imageplane.quaternion.copy(camera.quaternion);
+  imageplane.updateMatrixWorld();
+  return imageplane;
+}
+function createGeometrybyHitting(camera, imageplane, bowl) {
+  const array_indices = Array.from(new Set(bowl.geometry.index.array));
   const map_index2vecuv = new Map();
   const array_vecuv = [];
 
   const vec_cam = new THREE.Vector3(
-    camera_front.position.x,
-    camera_front.position.y,
-    camera_front.position.z
+    camera.position.x,
+    camera.position.y,
+    camera.position.z
   );
-  // set position, index 생성
-  for (
-    let i = 0;
-    i < sphere.geometry.attributes.position.array.length / 3;
-    i++
-  ) {
+  for (let i = 0; i < bowl.geometry.attributes.position.array.length / 3; i++) {
     array_vecuv.push([
       new THREE.Vector3()
-        .fromBufferAttribute(sphere.geometry.attributes.position, i)
-        .add(sphere.position),
+        .fromBufferAttribute(bowl.geometry.attributes.position, i)
+        .add(bowl.position),
     ]);
     map_index2vecuv.set(array_indices[i], array_vecuv[i]);
   }
-  console.log(map_index2vecuv);
   const array_hitting_indices = [];
   const array_hitting_position = [];
   const array_hitting_uv = [];
-  for (let i = 0; i < sphere.geometry.index.array.length / 3; i++) {
+  for (let i = 0; i < bowl.geometry.index.array.length / 3; i++) {
     const raycaster = new THREE.Raycaster(
-      map_index2vecuv.get(sphere.geometry.index.array[i * 3])[0],
+      map_index2vecuv.get(bowl.geometry.index.array[i * 3])[0],
       vec_cam
         .clone()
-        .sub(map_index2vecuv.get(sphere.geometry.index.array[i * 3])[0])
+        .sub(map_index2vecuv.get(bowl.geometry.index.array[i * 3])[0])
         .normalize(),
       0,
       map_index2vecuv
-        .get(sphere.geometry.index.array[i * 3])[0]
+        .get(bowl.geometry.index.array[i * 3])[0]
         .distanceTo(vec_cam)
     );
     const raycaster_1 = new THREE.Raycaster(
-      map_index2vecuv.get(sphere.geometry.index.array[i * 3 + 1])[0],
+      map_index2vecuv.get(bowl.geometry.index.array[i * 3 + 1])[0],
       vec_cam
         .clone()
-        .sub(map_index2vecuv.get(sphere.geometry.index.array[i * 3 + 1])[0])
+        .sub(map_index2vecuv.get(bowl.geometry.index.array[i * 3 + 1])[0])
         .normalize(),
       0,
       map_index2vecuv
-        .get(sphere.geometry.index.array[i * 3 + 1])[0]
+        .get(bowl.geometry.index.array[i * 3 + 1])[0]
         .distanceTo(vec_cam)
     );
     const raycaster_2 = new THREE.Raycaster(
-      map_index2vecuv.get(sphere.geometry.index.array[i * 3 + 2])[0],
+      map_index2vecuv.get(bowl.geometry.index.array[i * 3 + 2])[0],
       vec_cam
         .clone()
-        .sub(map_index2vecuv.get(sphere.geometry.index.array[i * 3 + 2])[0])
+        .sub(map_index2vecuv.get(bowl.geometry.index.array[i * 3 + 2])[0])
         .normalize(),
       0,
       map_index2vecuv
-        .get(sphere.geometry.index.array[i * 3 + 2])[0]
+        .get(bowl.geometry.index.array[i * 3 + 2])[0]
         .distanceTo(vec_cam)
     );
     const intersects = [];
-    intersects.push(raycaster.intersectObject(nearplane_front));
-    intersects.push(raycaster_1.intersectObject(nearplane_front));
-    intersects.push(raycaster_2.intersectObject(nearplane_front));
+    intersects.push(raycaster.intersectObject(imageplane));
+    intersects.push(raycaster_1.intersectObject(imageplane));
+    intersects.push(raycaster_2.intersectObject(imageplane));
     if (
       intersects[0].length == 1 &&
       intersects[1].length == 1 &&
       intersects[2].length == 1
     ) {
-      array_hitting_indices.push(sphere.geometry.index.array[i * 3]);
-      array_hitting_indices.push(sphere.geometry.index.array[i * 3 + 1]);
-      array_hitting_indices.push(sphere.geometry.index.array[i * 3 + 2]);
+      array_hitting_indices.push(bowl.geometry.index.array[i * 3]);
+      array_hitting_indices.push(bowl.geometry.index.array[i * 3 + 1]);
+      array_hitting_indices.push(bowl.geometry.index.array[i * 3 + 2]);
 
-      map_index2vecuv.get(sphere.geometry.index.array[i * 3])[1] =
+      map_index2vecuv.get(bowl.geometry.index.array[i * 3])[1] =
         intersects[0][0].uv;
-      map_index2vecuv.get(sphere.geometry.index.array[i * 3 + 1])[1] =
+      map_index2vecuv.get(bowl.geometry.index.array[i * 3 + 1])[1] =
         intersects[1][0].uv;
-      map_index2vecuv.get(sphere.geometry.index.array[i * 3 + 2])[1] =
+      map_index2vecuv.get(bowl.geometry.index.array[i * 3 + 2])[1] =
         intersects[2][0].uv;
     }
   }
-  console.log(map_index2vecuv);
-  console.log("array_hitting_indices", array_hitting_indices);
   const set_unique_hit_indices = new Set(array_hitting_indices);
-  console.log("set_unique_hit_indices", set_unique_hit_indices);
   const map_oldindex = new Map();
   const floatarray_indices = new Uint16Array(array_hitting_indices.length);
   let i = 0;
@@ -363,31 +296,270 @@ function init() {
   }
 
   // buffer geometry
-  const geometry_front = new THREE.BufferGeometry();
-  geometry_front.setAttribute(
+  const buffergeometry = new THREE.BufferGeometry();
+  buffergeometry.setAttribute(
     "position",
     new THREE.BufferAttribute(new Float32Array(array_hitting_position), 3)
   );
-  geometry_front.setAttribute(
+  buffergeometry.setAttribute(
     "uv",
     new THREE.BufferAttribute(new Float32Array(array_hitting_uv), 2)
   );
-  geometry_front.setIndex(new THREE.BufferAttribute(floatarray_indices, 1));
+  buffergeometry.setIndex(new THREE.BufferAttribute(floatarray_indices, 1));
+  return buffergeometry;
+}
 
-  const mesh = new THREE.Mesh(
-    geometry_front,
-    // new THREE.MeshBasicMaterial({
-    //   color: 0xff0000,
-    //   side: THREE.DoubleSide,
-    // })
-    material
+function init() {
+  renderer = new THREE.WebGLRenderer();
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  document.body.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(
+    55,
+    window.innerWidth / window.innerHeight,
+    1,
+    20000
   );
-  console.log(new THREE.BufferAttribute(sphere.geometry.index.array, 1));
-  console.log(
-    new THREE.BufferAttribute(new Float32Array(array_hitting_indices), 1)
+  camera.position.set(0, 5, -60);
+  camera.up.set(0, 0, -1);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrix();
+
+  const axesHelper = new THREE.AxesHelper(50);
+  scene.add(axesHelper);
+
+  const video_0 = document.getElementById("cam0");
+  if (video_0.paused) {
+    video_0.play();
+  }
+  const video_1 = document.getElementById("cam1");
+  if (video_1.paused) {
+    video_1.play();
+  }
+  const video_2 = document.getElementById("cam2");
+  if (video_2.paused) {
+    video_2.play();
+  }
+  const video_3 = document.getElementById("cam3");
+  if (video_3.paused) {
+    video_3.play();
+  }
+  // sphere
+  const geometry_sphere = new THREE.SphereGeometry(120, 360, 180); //(120, 256, 128);
+  const sphere = new THREE.Mesh(
+    geometry_sphere,
+    new THREE.MeshPhongMaterial({
+      color: 0xffff00,
+      transparent: true,
+      side: THREE.DoubleSide,
+      opacity: 0.3,
+    })
   );
-  scene.add(mesh);
-  console.log(geometry_front);
+  sphere.position.set(0, 0, -100);
+  sphere.updateMatrixWorld();
+  scene.add(sphere);
+
+  // front camera
+  // parameter -> fx, fy, cx, cy, skew_c, width, height, near, far
+  const camera_calibrated_front = new CalibratedCamera(
+    357.142857,
+    357.143665,
+    642.098939,
+    357.853665,
+    0,
+    1280,
+    720,
+    0.1,
+    100
+  );
+  // camera, Position, Euler
+  SetExtrinsicParameters(
+    camera_calibrated_front,
+    -0.1,
+    -6.45,
+    -1.82,
+    45,
+    0.0001,
+    0.001
+  );
+
+  scene.add(camera_calibrated_front);
+  const helper_front = new THREE.CameraHelper(camera_calibrated_front);
+  // scene.add(helper_front);
+  helper_front.updateMatrix();
+  camera_calibrated_front.updateMatrix();
+
+  const texture_front = new THREE.VideoTexture(video_0);
+  const material_front = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+      time: { value: 1.0 },
+      colorTexture: { value: texture_front },
+    },
+    vertexShader: document.getElementById("vertexShader").textContent,
+    fragmentShader: document.getElementById("fragment_shader2").textContent,
+  });
+
+  const imageplane_front = CreateImagePlane(camera_calibrated_front);
+  scene.add(imageplane_front);
+
+  const geometry_front = createGeometrybyHitting(
+    camera_calibrated_front,
+    imageplane_front,
+    sphere
+  );
+  const mesh_front = new THREE.Mesh(geometry_front, material_front);
+  scene.add(mesh_front);
+
+  // left camera
+  const camera_calibrated_left = new CalibratedCamera(
+    357.142857,
+    357.143665,
+    642.098939,
+    357.853665,
+    0,
+    1280,
+    720,
+    0.1,
+    100
+  );
+  SetExtrinsicParameters(
+    camera_calibrated_left,
+    -1.4,
+    1.55,
+    -2.16,
+    41.0,
+    0.5001,
+    -87.5
+  );
+  scene.add(camera_calibrated_left);
+  const helper_left = new THREE.CameraHelper(camera_calibrated_left);
+  helper_left.updateMatrix();
+  // scene.add(helper_left);
+
+  const texture_left = new THREE.VideoTexture(video_1);
+  const material_left = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+      time: { value: 1.0 },
+      colorTexture: { value: texture_left },
+    },
+    vertexShader: document.getElementById("vertexShader").textContent,
+    fragmentShader: document.getElementById("fragment_shader2").textContent,
+  });
+
+  const imageplane_left = CreateImagePlane(camera_calibrated_left);
+  scene.add(imageplane_left);
+
+  const geometry_left = createGeometrybyHitting(
+    camera_calibrated_left,
+    imageplane_left,
+    sphere
+  );
+  const mesh_left = new THREE.Mesh(geometry_left, material_left);
+  scene.add(mesh_left);
+
+  // right camera
+  const camera_calibrated_right = new CalibratedCamera(
+    357.142857,
+    357.143665,
+    642.098939,
+    357.853665,
+    0,
+    1280,
+    720,
+    0.1,
+    100
+  );
+  SetExtrinsicParameters(
+    camera_calibrated_right,
+    1.4,
+    1.55,
+    -2.16,
+    41.0,
+    0.0001,
+    85.0
+  );
+  scene.add(camera_calibrated_right);
+  const helper_right = new THREE.CameraHelper(camera_calibrated_right);
+  helper_right.updateMatrix();
+  // scene.add(helper_right);
+
+  const texture_right = new THREE.VideoTexture(video_3);
+  const material_right = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+      time: { value: 1.0 },
+      colorTexture: { value: texture_right },
+    },
+    vertexShader: document.getElementById("vertexShader").textContent,
+    fragmentShader: document.getElementById("fragment_shader2").textContent,
+  });
+
+  const imageplane_right = CreateImagePlane(camera_calibrated_right);
+  scene.add(imageplane_right);
+
+  const geometry_right = createGeometrybyHitting(
+    camera_calibrated_right,
+    imageplane_right,
+    sphere
+  );
+  const mesh_right = new THREE.Mesh(geometry_right, material_right);
+  scene.add(mesh_right);
+
+  // rear
+  const camera_calibrated_rear = new CalibratedCamera(
+    357.142857,
+    357.143665,
+    642.098939,
+    357.853665,
+    0,
+    1280,
+    720,
+    0.1,
+    100
+  );
+  SetExtrinsicParameters(
+    camera_calibrated_rear,
+    0.0,
+    3.99,
+    -1.25,
+    61.0,
+    1.0001,
+    180.0
+  );
+  scene.add(camera_calibrated_rear);
+  const helper_rear = new THREE.CameraHelper(camera_calibrated_rear);
+  helper_rear.updateMatrix();
+  // scene.add(helper_rear);
+
+  const texture_rear = new THREE.VideoTexture(video_2);
+  const material_rear = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    opacity: 0.9,
+    transparent: true,
+    uniforms: {
+      time: { value: 1.0 },
+      colorTexture: { value: texture_rear },
+    },
+    vertexShader: document.getElementById("vertexShader").textContent,
+    fragmentShader: document.getElementById("fragment_shader2").textContent,
+  });
+
+  const imageplane_rear = CreateImagePlane(camera_calibrated_rear);
+  scene.add(imageplane_rear);
+
+  const geometry_rear = createGeometrybyHitting(
+    camera_calibrated_rear,
+    imageplane_rear,
+    sphere
+  );
+  const mesh_rear = new THREE.Mesh(geometry_rear, material_rear);
+  scene.add(mesh_rear);
 
   // sun
   sun = new THREE.Vector3();
@@ -450,22 +622,63 @@ function init() {
   // boat
   const loader = new GLTFLoader();
   loader.load("./motorboat.glb", function (gltf) {
-    const model = gltf.scene;
+    const model = gltf.scene.children[0];
     scene.add(model);
-    model.scale.set(0.25, 0.25, 0.25);
-    model.position.set(0, -7, 0);
+
+    //model.children[0];
+    //model.rotateX(-Math.PI * 0.5);
+
+    const box = new THREE.BoxHelper(model, 0xffff00);
+    // scene.add(box);
+    box.geometry.computeBoundingBox();
+
+    const centerPt = new THREE.Vector3().addVectors(
+      box.geometry.boundingBox.min,
+      box.geometry.boundingBox.max
+    );
+    centerPt.multiplyScalar(-0.5);
+    //model.position.set(centerPt.x, centerPt.y, centerPt.z);
+    //model.updateMatrix();
+
+    const diff = new THREE.Vector3().subVectors(
+      box.geometry.boundingBox.max,
+      box.geometry.boundingBox.min
+    );
+    //model.scale.set(3.0 / diff.x, 9.0 / diff.y, 3.0 / diff.z);
+
+    const T0 = new THREE.Matrix4().makeTranslation(
+      centerPt.x,
+      centerPt.y,
+      -centerPt.z
+    );
+    const T1 = new THREE.Matrix4().makeScale(
+      3.0 / diff.x,
+      3.0 / diff.y,
+      9.0 / diff.z
+    );
+    const T2 = new THREE.Matrix4().multiplyMatrices(
+      new THREE.Matrix4().makeRotationZ(Math.PI),
+      new THREE.Matrix4().makeRotationX(-Math.PI * 0.5)
+    );
+
+    model.matrix = new THREE.Matrix4().multiplyMatrices(T2, T1);
+    model.matrix.multiply(T0);
+    model.matrixAutoUpdate = false;
   });
 
   // control
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.maxPolarAngle = Math.PI * 0.495;
-  controls.target.set(0, 10, 0);
-  controls.minDistance = 40.0;
-  controls.maxDistance = 200.0;
+  controls.target.set(0, 0, 0);
   controls.update();
 
   window.addEventListener("resize", onWindowResize);
+  // remove mesh
   scene.remove(sphere);
+  scene.remove(axesHelper);
+  scene.remove(imageplane_front);
+  scene.remove(imageplane_left);
+  scene.remove(imageplane_right);
+  scene.remove(imageplane_rear);
 }
 
 function onWindowResize() {
@@ -482,17 +695,14 @@ function animate() {
 
 function render() {
   const time = performance.now() * 0.001;
-
-  updateDataTexture(video, mesh);
-  updateDataTexture(video_2, mesh_2);
-  updateDataTexture(video_3, mesh_3);
-  updateDataTexture(video_4, mesh_4);
+  // for streaming video
+  // updateDataTexture(video, mesh);
   water.material.uniforms["time"].value += 1.0 / 60.0;
 
   renderer.render(scene, camera);
 }
 
-window.onkeydown = (e) => console.log("FocalLength:", helper);
+window.onkeydown = (e) => console.log();
 
 // Check imageData when Click
 

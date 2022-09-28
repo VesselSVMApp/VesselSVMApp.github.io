@@ -12,14 +12,99 @@
     <script src="./jsmpg.js"></script>
   </head>
   <body>
-    <!-- "./src/cam_0.avi" -->
     <video id="cam0" src="./src/cam_0.mp4" muted loop autoplay hidden></video>
+    <video id="cam1" src="./src/cam_1.mp4" muted loop autoplay hidden></video>
+    <video id="cam2" src="./src/cam_2.mp4" muted loop autoplay hidden></video>
+    <video id="cam3" src="./src/cam_3.mp4" muted loop autoplay hidden></video>
     <canvas id="video" hidden></canvas>
     <canvas id="video_2" hidden></canvas>
     <canvas id="video_3" hidden></canvas>
     <canvas id="video_4" hidden></canvas>
-    <!-- Check context imageData when click button -->
-    <!-- <input type="button" id="target" value="button" /> -->
+    <script id="vertexShader" type="x-shader/x-vertex">
+
+      varying vec2 vUv;
+
+      void main()
+      {
+          vUv = uv;
+          vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+          gl_Position = projectionMatrix * mvPosition;
+      }
+    </script>
+
+    <script id="fragment_shader2" type="x-shader/x-fragment">
+
+      #define FLT_MAX 1000000.f
+      #define FLT_MIN -1000000.f
+        uniform float time;
+
+        uniform sampler2D colorTexture;
+
+        varying vec2 vUv;
+
+        void main( void ) {
+          // vUv.x ==> tex coord u [0,1]
+          // vUv.y ==> tex coord v [0,1]
+
+
+
+
+            // 357.142857, //mu
+            // 357.143665, //mv
+            // 642.098939, //u0
+            // 357.853665, //v0
+            const float m_nK1 = 0.864082; //k1
+            const float m_nK2 = 0.116755; //k2
+            const float m_nK3 = -0.024516; //k3
+            const float m_nK4 = 0.013738; //k4
+            const float m_nK5 = -0.003442; //k5
+
+            vec2 position = - 1.0 + 2.0 * vUv;
+            //float a = atan( position.y, position.x );
+            float r = sqrt( dot( position, position ) );
+
+            float rIm = 0.0;
+
+            float theta_max = FLT_MIN;
+
+            float theta_min = FLT_MAX;
+
+            float theta = atan(r, 1.0f);
+
+            if (theta > theta_max)
+              theta_max = theta;
+
+            if (theta < theta_min)
+              theta_min = theta;
+
+            //if (theta > 3.141592 / 2.0f) {
+            //  return -1;
+            //}
+            //else if (theta < 0.0001f) {
+            //  return -1;
+            //}
+
+            float theta3 = theta * theta * theta;
+            float theta5 = theta3 * theta * theta;
+            float theta7 = theta5 * theta * theta;
+            float theta9 = theta7 * theta * theta;
+
+            rIm = m_nK1 * theta + m_nK2 * theta3 + m_nK3 * theta5 + m_nK4 * theta7 + m_nK5 * theta9;
+
+            float phi = atan(position.y, position.x);
+
+            float distortedU = rIm * cos(phi);
+            float distortedV = rIm * sin(phi);
+            vec2 uv_distorted = (vec2(distortedU, distortedV) + 1.0) * 0.5;
+
+            //vec3 color = texture2D( colorTexture, vUv ).rgb;
+            vec3 color = texture2D( colorTexture, uv_distorted ).rgb;
+
+            //gl_FragColor = vec4( color * r * 1.5, 1.0 );
+            gl_FragColor = vec4( color, 1.0 );
+
+        }
+    </script>
 
     <script type="module" src="./main.js"></script>
   </body>
