@@ -28,43 +28,76 @@ Add
 
 - Java
 ```
-import androidx.appcompat.app.AppCompatActivity;  
-import android.content.Context;  
-import android.os.Build;  
-import android.os.Bundle;  
-  
-import android.webkit.WebChromeClient;  
-import android.webkit.WebSettings;  
-import android.webkit.WebView;  
-import android.webkit.WebViewClient;  
-  
-public class MainActivity extends AppCompatActivity {  
-    private WebView myWebView = null;  
- private Context mContext;  
-  
-  @Override  
-  protected void onCreate(Bundle savedInstanceState) {  
-        super.onCreate(savedInstanceState);  
-  setContentView(R.layout.activity_main);  
-  
-  myWebView = (WebView) findViewById(R.id.webview);  
-  myWebView.setWebViewClient(new WebViewClient());  
-  myWebView.setWebChromeClient(new WebChromeClient());  
-  myWebView.getSettings().setBuiltInZoomControls(false);  
-  myWebView.getSettings().setJavaScriptEnabled(true);  
-  
- if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {  
-            WebView.setWebContentsDebuggingEnabled(true);  
-  }  
-  
-        myWebView.getSettings().setAllowFileAccess(true);  
-  myWebView.getSettings().setAllowContentAccess(true);  
-  myWebView.getSettings().setAllowFileAccessFromFileURLs(true);  
-  myWebView.getSettings().setAllowUniversalAccessFromFileURLs(true);  
-  myWebView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);  
-  
-  myWebView.loadUrl("https://kimgooq.github.io/");  
-  }  
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
+import android.os.Build;
+import android.os.Bundle;
+
+import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+    private WebView myWebView = null;
+    private Context mContext;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        //webView = (WebView) findViewById(R.id.webview);
+
+        myWebView = (WebView) findViewById(R.id.webview);
+        myWebView.setWebViewClient(new WebViewClient());
+        myWebView.setWebChromeClient(new WebChromeClient());
+        myWebView.getSettings().setBuiltInZoomControls(false);
+        myWebView.getSettings().setJavaScriptEnabled(true);
+
+        //myWebView.addJavascriptInterface(new WebAppInterface(this), "JONGHOON");
+        //String USER_AGENT = "Mozilla/5.0 (Linux; Android 4.1.1; Galaxy Nexus Build/JRO03C) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19";
+        //myWebView.getSettings().setUserAgentString(USER_AGENT);
+        //myWebView.getSettings().setUserAgentString("Mozilla/5.0 AppleWebKit/535.19 Chrome/56.0.0 Mobile Safari/535.19");
+
+        //myWebView.getSettings().setJavaScriptEnabled(true);
+        //myWebView.getSettings().setPluginState(WebSettings.PluginState.ON);
+        myWebView.getSettings().setAllowFileAccess(true);
+        myWebView.getSettings().setAllowContentAccess(true);
+        myWebView.getSettings().setAllowFileAccessFromFileURLs(true);
+        myWebView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            myWebView.setWebContentsDebuggingEnabled(true);
+        }
+        myWebView.getSettings().setLoadsImagesAutomatically(true);
+        myWebView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
+        myWebView.getSettings().setAppCacheEnabled(true);
+
+        myWebView.getSettings().setDomStorageEnabled(true);
+        myWebView.getSettings().setDatabaseEnabled(true);
+        myWebView.getSettings().setAppCacheEnabled(true);
+
+        myWebView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+
+        myWebView.loadUrl("file:///android_asset/index.html");
+    }
+    public class WebAppInterface {
+        Context mContext;
+
+        /** Instantiate the interface and set the context */
+        WebAppInterface(Context c) {
+            mContext = c;
+        }
+        /** Show a toast from the web page */
+        @JavascriptInterface
+        public void showToast(String toast) {
+            Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
+        }
+    }
 }
 ```
 
