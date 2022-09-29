@@ -349,7 +349,7 @@ function init() {
     video_3.play();
   }
   // sphere
-  const geometry_sphere = new THREE.SphereGeometry(50, 512, 256); //(120, 256, 128);
+  const geometry_sphere = new THREE.SphereGeometry(50, 640, 320); //(120, 256, 128);
   const sphere = new THREE.Mesh(
     geometry_sphere,
     new THREE.MeshPhongMaterial({
@@ -362,6 +362,55 @@ function init() {
   sphere.position.set(0, 0, -46.5);
   sphere.updateMatrixWorld();
   scene.add(sphere);
+  // rear
+  const camera_calibrated_rear = new CalibratedCamera(
+    357.142857,
+    357.143665,
+    642.098939,
+    357.853665,
+    0,
+    1280,
+    720,
+    0.1,
+    100
+  );
+  SetExtrinsicParameters(
+    camera_calibrated_rear,
+    0.0,
+    3.99,
+    -1.25,
+    61.0,
+    1.0001,
+    180.0
+  );
+  scene.add(camera_calibrated_rear);
+  const helper_rear = new THREE.CameraHelper(camera_calibrated_rear);
+  helper_rear.updateMatrix();
+  // scene.add(helper_rear);
+
+  const texture_rear = new THREE.VideoTexture(video_2);
+  const material_rear = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    opacity: 0.9,
+    transparent: true,
+    uniforms: {
+      time: { value: 1.0 },
+      colorTexture: { value: texture_rear },
+    },
+    vertexShader: document.getElementById("vertexShader").textContent,
+    fragmentShader: document.getElementById("fragment_shader2").textContent,
+  });
+
+  const imageplane_rear = CreateImagePlane(camera_calibrated_rear);
+  scene.add(imageplane_rear);
+
+  const geometry_rear = createGeometrybyHitting(
+    camera_calibrated_rear,
+    imageplane_rear,
+    sphere
+  );
+  const mesh_rear = new THREE.Mesh(geometry_rear, material_rear);
+  scene.add(mesh_rear);
 
   // front camera
   // parameter -> fx, fy, cx, cy, skew_c, width, height, near, far
@@ -511,56 +560,6 @@ function init() {
   const mesh_right = new THREE.Mesh(geometry_right, material_right);
   scene.add(mesh_right);
 
-  // rear
-  const camera_calibrated_rear = new CalibratedCamera(
-    357.142857,
-    357.143665,
-    642.098939,
-    357.853665,
-    0,
-    1280,
-    720,
-    0.1,
-    100
-  );
-  SetExtrinsicParameters(
-    camera_calibrated_rear,
-    0.0,
-    3.99,
-    -1.25,
-    61.0,
-    1.0001,
-    180.0
-  );
-  scene.add(camera_calibrated_rear);
-  const helper_rear = new THREE.CameraHelper(camera_calibrated_rear);
-  helper_rear.updateMatrix();
-  // scene.add(helper_rear);
-
-  const texture_rear = new THREE.VideoTexture(video_2);
-  const material_rear = new THREE.ShaderMaterial({
-    side: THREE.BackSide,
-    opacity: 0.9,
-    transparent: true,
-    uniforms: {
-      time: { value: 1.0 },
-      colorTexture: { value: texture_rear },
-    },
-    vertexShader: document.getElementById("vertexShader").textContent,
-    fragmentShader: document.getElementById("fragment_shader2").textContent,
-  });
-
-  const imageplane_rear = CreateImagePlane(camera_calibrated_rear);
-  scene.add(imageplane_rear);
-
-  const geometry_rear = createGeometrybyHitting(
-    camera_calibrated_rear,
-    imageplane_rear,
-    sphere
-  );
-  const mesh_rear = new THREE.Mesh(geometry_rear, material_rear);
-  scene.add(mesh_rear);
-
   // sun
   sun = new THREE.Vector3();
   // Water
@@ -652,9 +651,9 @@ function init() {
       -centerPt.z
     );
     const T1 = new THREE.Matrix4().makeScale(
-      3.0 / diff.x,
-      3.0 / diff.y,
-      9.0 / diff.z
+      (3.0 / diff.x) * 1.35,
+      (3.0 / diff.y) * 1.35,
+      (9.0 / diff.z) * 1.35
     );
     const T2 = new THREE.Matrix4().multiplyMatrices(
       new THREE.Matrix4().makeRotationZ(Math.PI),
@@ -672,6 +671,24 @@ function init() {
   controls.update();
 
   window.addEventListener("resize", onWindowResize);
+  // test
+  const geometry = new THREE.PlaneGeometry(128, 72);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffff00,
+    side: THREE.DoubleSide,
+  });
+  const plane = new THREE.Mesh(geometry, material_left);
+  scene.add(plane);
+  plane.position.set(-100, 0, -20);
+  plane.setRotationFromEuler(new THREE.Euler(0, -0.5 * Math.PI, 0.5 * Math.PI));
+  // setting
+  const V_setting = new THREE.Vector3(0, 0, -2);
+  mesh_front.position.add(V_setting);
+  mesh_left.position.add(V_setting);
+  mesh_right.position.add(V_setting);
+  mesh_rear.position.add(V_setting);
+
+  mesh_rear.position.add(new THREE.Vector3(0, -1.5, 0));
   // remove mesh
   scene.remove(sphere);
   scene.remove(axesHelper);
