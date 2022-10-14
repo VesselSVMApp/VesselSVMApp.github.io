@@ -73,20 +73,29 @@ class CalibratedCamera extends Camera {
   }
   copy(source, recursive) {
     super.copy(source, recursive);
-    this.fx = fx;
-    this.fy = fy;
-    // this.cx = cx;
-    // this.cy = cy;
-    this.skew_c = skew_c;
-    this.width = width;
-    this.height = height;
-    this.near = near;
-    this.far = far;
+    this.matrixWorldInverse.copy(source.matrixWorldInverse);
+    this.projectionMatrix.copy(source.projectionMatrix);
+    this.projectionMatrixInverse.copy(source.projectionMatrixInverse);
 
-    this.cx = cx - this.width / 2;
-    this.cy = cy - this.height / 2;
+    this.fx.copy(source.fx);
+    this.fy.copy(source.fy);
+    this.cx.copy(source.cx);
+    this.cy.copy(source.cy);
+    this.skew_c.copy(source.skew_c);
+    this.width.copy(source.width);
+    this.height.copy(source.height);
+    this.near.copy(source.near);
+    this.far.copy(source.far);
 
     return this;
+  }
+  copy(source, recursive) {
+    super.copy(source, recursive);
+
+    return this;
+  }
+  clone() {
+    return new this.constructor().copy(this);
   }
 
   toJSON(meta) {

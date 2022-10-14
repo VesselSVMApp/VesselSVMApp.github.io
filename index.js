@@ -10,8 +10,6 @@ stream = new Stream({
   name: "foscam_stream",
   streamUrl: List_streamUrl[0],
   wsPort: 30001,
-  // width: 480,
-  // height: 320,
 });
 
 stream_2 = new Stream({
